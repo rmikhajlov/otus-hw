@@ -43,9 +43,36 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
+var textMoreThen10TopWords = `b b c c a a d u y f f g g h z 1 d e e  h i i k k l 
+	l m m n n o o p p `
+
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		require.Len(t, Top10(""), 0)
+	})
+
+	t.Run("1 word", func(t *testing.T) {
+		require.Equal(t, []string{"a"}, Top10("a"))
+	})
+
+	t.Run("2 same words", func(t *testing.T) {
+		require.Equal(t, []string{"a"}, Top10("a a"))
+	})
+
+	t.Run("more then 10 top words with same frequency", func(t *testing.T) {
+		expected := []string{
+			"a",
+			"b",
+			"c",
+			"d",
+			"e",
+			"f",
+			"g",
+			"h",
+			"i",
+			"k",
+		}
+		require.Equal(t, expected, Top10(textMoreThen10TopWords))
 	})
 
 	t.Run("positive test", func(t *testing.T) {
