@@ -78,38 +78,40 @@ func (l *list) Remove(i *ListItem) {
 	}
 
 	if _, exists := l.elements[i]; exists {
-		if i.Prev == nil && i.Next == nil {
+		switch {
+		case i.Prev == nil && i.Next == nil:
 			l.front = nil
 			l.back = nil
-		} else if i.Prev == nil {
+		case i.Prev == nil:
 			l.back = i.Next
-		} else if i.Next == nil {
+		case i.Next == nil:
 			l.front = i.Prev
-		} else {
+		default:
 			i.Next.Prev = i.Prev
 			i.Prev.Next = i.Next
 		}
+
 		delete(l.elements, i)
 	}
-
 }
 
 func (l *list) MoveToFront(i *ListItem) {
 	if _, exists := l.elements[i]; exists {
-		if i == l.front {
+		switch {
+		case i == l.front:
 			return
-		} else if i == l.back {
+		case i == l.back:
 			l.back = i.Prev
 			i.Prev.Next = nil
 			i.Next = l.front
 			l.front.Prev = i
-
-		} else {
+		default:
 			i.Prev = nil
 			i.Next = l.front
 			i.Next.Prev = i.Prev
 			l.front.Prev = i
 		}
+
 		l.front = i
 	}
 }
