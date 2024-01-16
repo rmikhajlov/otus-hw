@@ -83,9 +83,9 @@ func (l *list) Remove(i *ListItem) {
 			l.front = nil
 			l.back = nil
 		case i.Prev == nil:
-			l.back = i.Next
+			l.front = i.Next
 		case i.Next == nil:
-			l.front = i.Prev
+			l.back = i.Prev
 		default:
 			i.Next.Prev = i.Prev
 			i.Prev.Next = i.Next
@@ -106,10 +106,15 @@ func (l *list) MoveToFront(i *ListItem) {
 			i.Next = l.front
 			l.front.Prev = i
 		default:
+			i.Prev.Prev = i
+			i.Prev.Next = i.Next
 			i.Prev = nil
 			i.Next = l.front
-			i.Next.Prev = i.Prev
-			l.front.Prev = i
+
+			//i.Prev = nil
+			//i.Next = l.front
+			//i.Next.Next = i.Next
+			//l.front.Prev = i
 		}
 
 		l.front = i

@@ -49,8 +49,51 @@ func TestCache(t *testing.T) {
 		require.Nil(t, val)
 	})
 
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+	t.Run("purge logic when capacity has been exceeded", func(t *testing.T) {
+		c := NewCache(3)
+
+		c.Set("aaa", 100) // aaa
+		c.Set("bbb", 200) // bbb aaa
+		c.Set("ccc", 300) // ccc bbb aaa
+		c.Set("ddd", 400) // ddd ccc bbb
+
+		_, ok := c.Get("aaa")
+		require.False(t, ok)
+
+		_, ok = c.Get("bbb")
+		require.True(t, ok)
+
+		_, ok = c.Get("ccc")
+		require.True(t, ok)
+
+		_, ok = c.Get("ddd")
+		require.True(t, ok)
+
+	})
+
+	t.Run("purge oldest updated element logic when capacity has been exceeded", func(t *testing.T) {
+		c := NewCache(3)
+
+		c.Set("aaa", 100) // aaa
+		c.Set("bbb", 200) // bbb aaa
+		c.Set("ccc", 300) // ccc bbb aaa
+		c.Get("bbb")      // bbb ccc aaa
+		c.Set("aaa", 400) // aaa bbb ccc
+		c.Get("ccc")      // ccc aaa bbb
+		c.Set("ddd", 500) // ddd ccc aaa
+
+		_, ok := c.Get("ccc")
+		require.False(t, ok)
+
+		_, ok = c.Get("aaa")
+		require.True(t, ok)
+
+		_, ok = c.Get("bbb")
+		require.True(t, ok)
+
+		_, ok = c.Get("ddd")
+		require.True(t, ok)
+
 	})
 }
 
