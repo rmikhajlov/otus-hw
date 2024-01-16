@@ -14,22 +14,24 @@ type lruCache struct {
 	items    map[Key]*ListItem
 }
 
+type cacheElement struct {
+	key   Key
+	value interface{}
+}
+
 func (c *lruCache) Set(key Key, value interface{}) bool {
 	var elementExists bool
 
 	if _, exists := c.items[key]; exists {
 		elementExists = true
-		c.items[key].Value = value
+		c.items[key].Value.(*cacheElement).value = value
 		c.queue.MoveToFront(c.items[key])
 	} else {
-		newElement := &ListItem{
-			Value: value,
-		}
-		c.items[key] = newElement
-		c.queue.PushFront(key)
+		c.items[key] = c.queue.PushFront(&cacheElement{key: key, value: value})
 		if c.queue.Len() > c.capacity {
-			delete(c.items, c.queue.Back().Value.(Key))
+			oldest := c.queue.Back()
 			c.queue.Remove(c.queue.Back())
+			delete(c.items, oldest.Value.(*cacheElement).key)
 		}
 	}
 
@@ -37,16 +39,17 @@ func (c *lruCache) Set(key Key, value interface{}) bool {
 }
 
 func (c *lruCache) Get(key Key) (interface{}, bool) {
-	if _, exists := c.items[key]; exists {
-		c.queue.MoveToFront(c.items[key])
-		return c.items[key].Value, true
+	if item, exists := c.items[key]; exists {
+		c.queue.MoveToFront(item)
+		return item.Value.(*cacheElement).value, true
 	}
 
 	return nil, false
 }
 
 func (c *lruCache) Clear() {
-
+	c.queue = NewList()
+	c.items = make(map[Key]*ListItem)
 }
 
 func NewCache(capacity int) Cache {

@@ -17,13 +17,14 @@ type ListItem struct {
 }
 
 type list struct {
-	elements map[*ListItem]struct{}
-	front    *ListItem
-	back     *ListItem
+	//elements map[*ListItem]struct{}
+	front *ListItem
+	back  *ListItem
+	len   int
 }
 
 func (l *list) Len() int {
-	return len(l.elements)
+	return l.len
 }
 
 func (l *list) Front() *ListItem {
@@ -35,21 +36,21 @@ func (l *list) Back() *ListItem {
 }
 
 func (l *list) PushFront(v interface{}) *ListItem {
-	newFront := ListItem{
+	newFront := &ListItem{
 		Next:  l.front,
 		Prev:  nil,
 		Value: v,
 	}
 
-	if len(l.elements) == 0 {
-		l.back = &newFront
-		l.front = &newFront
+	if l.Len() == 0 {
+		l.back = newFront
+		l.front = newFront
 	} else {
-		l.front.Prev = &newFront
-		l.front = &newFront
+		l.front.Prev = newFront
+		l.front = newFront
 	}
 
-	l.elements[&newFront] = struct{}{}
+	l.len++
 	return l.front
 }
 
@@ -60,7 +61,7 @@ func (l *list) PushBack(v interface{}) *ListItem {
 		Value: v,
 	}
 
-	if len(l.elements) == 0 {
+	if l.Len() == 0 {
 		l.back = &newBack
 		l.front = &newBack
 	} else {
@@ -68,61 +69,43 @@ func (l *list) PushBack(v interface{}) *ListItem {
 		l.back = &newBack
 	}
 
-	l.elements[&newBack] = struct{}{}
+	l.len++
 	return l.back
 }
 
 func (l *list) Remove(i *ListItem) {
-	if len(l.elements) == 0 {
-		return
+	if i == l.front {
+		l.front = i.Next
 	}
-
-	if _, exists := l.elements[i]; exists {
-		switch {
-		case i.Prev == nil && i.Next == nil:
-			l.front = nil
-			l.back = nil
-		case i.Prev == nil:
-			l.front = i.Next
-		case i.Next == nil:
-			l.back = i.Prev
-		default:
-			i.Next.Prev = i.Prev
-			i.Prev.Next = i.Next
-		}
-
-		delete(l.elements, i)
+	if i == l.back {
+		l.back = i.Prev
 	}
+	if i.Next != nil {
+		i.Next.Prev = i.Prev
+	}
+	if i.Prev != nil {
+		i.Prev.Next = i.Next
+	}
+	l.len--
 }
 
 func (l *list) MoveToFront(i *ListItem) {
-	if _, exists := l.elements[i]; exists {
-		switch {
-		case i == l.front:
-			return
-		case i == l.back:
-			l.back = i.Prev
-			i.Prev.Next = nil
-			i.Next = l.front
-			l.front.Prev = i
-		default:
-			i.Prev.Prev = i
-			i.Prev.Next = i.Next
-			i.Prev = nil
-			i.Next = l.front
-
-			//i.Prev = nil
-			//i.Next = l.front
-			//i.Next.Next = i.Next
-			//l.front.Prev = i
-		}
-
-		l.front = i
+	if i == l.front {
+		return
 	}
+	l.Remove(i)
+	i.Prev = nil
+	i.Next = l.front
+	if l.front != nil {
+		l.front.Prev = i
+	}
+	l.front = i
+	if l.back == nil {
+		l.back = i
+	}
+	l.len++
 }
 
 func NewList() List {
-	return &list{
-		elements: make(map[*ListItem]struct{}),
-	}
+	return &list{}
 }
