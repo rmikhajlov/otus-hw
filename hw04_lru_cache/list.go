@@ -17,7 +17,6 @@ type ListItem struct {
 }
 
 type list struct {
-	//elements map[*ListItem]struct{}
 	front *ListItem
 	back  *ListItem
 	len   int

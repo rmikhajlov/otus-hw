@@ -68,7 +68,6 @@ func TestCache(t *testing.T) {
 
 		_, ok = c.Get("ddd")
 		require.True(t, ok)
-
 	})
 
 	t.Run("purge oldest updated element logic when capacity has been exceeded", func(t *testing.T) {
@@ -93,7 +92,6 @@ func TestCache(t *testing.T) {
 
 		_, ok = c.Get("ddd")
 		require.True(t, ok)
-
 	})
 }
 
