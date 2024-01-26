@@ -2,7 +2,6 @@ package hw05parallelexecution
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
@@ -15,50 +14,59 @@ func Run(tasks []Task, n, m int) error {
 	jobs := make(chan Task, len(tasks))
 	returnChannel := make(chan int, 1)
 	mutex := sync.Mutex{}
-	//wg := sync.WaitGroup{}
+	wg := sync.WaitGroup{}
+	s := sync.Once{}
+
+	for _, task := range tasks {
+		jobs <- task
+	}
+
+	close(jobs)
 
 	for i := 1; i <= n; i++ {
-		//wg.Add(1)
-		go func(i int) {
-			for job := range jobs {
-				fmt.Printf("job started by goroutine %d\n", i)
-				if err := job(); err != nil {
-					fmt.Printf("job finished by goroutine %d with error: %v\n", i, err)
-					mutex.Lock()
-					m--
-					if m == 0 {
-						mutex.Unlock()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case job := <-jobs:
+					if job == nil {
 						//wg.Done()
-						returnChannel <- 1
-						close(jobs)
-						fmt.Printf("goroutine %d closed jobs channel\n", i)
+						s.Do(func() {
+							returnChannel <- 0
+						})
 						return
 					}
-					mutex.Unlock()
+					if err := job(); err != nil {
+						mutex.Lock()
+						m--
+						if m == 0 {
+							mutex.Unlock()
+							//wg.Done()
+							returnChannel <- 1
+							return
+						}
+						mutex.Unlock()
+					}
+				default:
+					//wg.Done()
+					s.Do(func() {
+						returnChannel <- 0
+					})
+					return
 				}
-				//if len(jobs) == 0 {
-				//	fmt.Printf("goroutine %d empty jobs channel\n", i)
-				//	returnChannel <- 0
-				//}
 			}
-		}(i)
+		}()
 	}
 
-	for job := range tasks {
-		jobs <- tasks[job]
-	}
-
-	returnValue, _ := <-returnChannel
+	returnValue := <-returnChannel
 
 	if returnValue == 1 {
-		//close(returnChannel)
 		return ErrErrorsLimitExceeded
 	} else if returnValue == 0 {
-		close(jobs)
+		wg.Wait()
 		return nil
 	}
-
-	//wg.Wait()
 
 	return nil
 }
