@@ -40,9 +40,6 @@ func Run(tasks []Task, n, m int) error {
 				select {
 				case job := <-jobs:
 					if job == nil {
-						s.Do(func() {
-							returnChannel <- 0
-						})
 						return
 					}
 					if err := job(); err != nil {
