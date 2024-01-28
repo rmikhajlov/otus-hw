@@ -16,6 +16,11 @@ func Run(tasks []Task, n, m int) error {
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	s := sync.Once{}
+	finishedBecauseErrors := false
+
+	if m <= 0 {
+		return ErrErrorsLimitExceeded
+	}
 
 	for _, task := range tasks {
 		jobs <- task
@@ -28,28 +33,38 @@ func Run(tasks []Task, n, m int) error {
 		go func() {
 			defer wg.Done()
 			for {
+				mutex.Lock()
+				if finishedBecauseErrors {
+					mutex.Unlock()
+					return
+				}
+				mutex.Unlock()
 				select {
 				case job := <-jobs:
 					if job == nil {
-						//wg.Done()
 						s.Do(func() {
 							returnChannel <- 0
 						})
 						return
 					}
+					mutex.Lock()
+					if m == 0 {
+						finishedBecauseErrors = true
+						mutex.Unlock()
+						return
+					}
+					mutex.Unlock()
 					if err := job(); err != nil {
 						mutex.Lock()
 						m--
 						if m == 0 {
+							finishedBecauseErrors = true
 							mutex.Unlock()
-							//wg.Done()
-							returnChannel <- 1
 							return
 						}
 						mutex.Unlock()
 					}
 				default:
-					//wg.Done()
 					s.Do(func() {
 						returnChannel <- 0
 					})
@@ -59,13 +74,10 @@ func Run(tasks []Task, n, m int) error {
 		}()
 	}
 
-	returnValue := <-returnChannel
+	wg.Wait()
 
-	if returnValue == 1 {
+	if finishedBecauseErrors {
 		return ErrErrorsLimitExceeded
-	} else if returnValue == 0 {
-		wg.Wait()
-		return nil
 	}
 
 	return nil
