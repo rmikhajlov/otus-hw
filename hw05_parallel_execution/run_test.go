@@ -73,7 +73,6 @@ func TestRun(t *testing.T) {
 		tasks := make([]Task, 0, tasksCount)
 
 		for i := 0; i < tasksCount; i++ {
-
 			tasks = append(tasks, func() error {
 				return nil
 			})
